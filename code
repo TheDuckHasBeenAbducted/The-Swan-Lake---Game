@@ -1,0 +1,894 @@
+// labedzie2.cpp : Ten plik zawiera funkcję „main”. W nim rozpoczyna się i kończy wykonywanie programu.
+//
+
+#include <iostream>
+#include <vector>
+#include <conio.h>
+#include <windows.h>
+#include <fstream>
+
+#define keyUp 72
+#define keyDown 80
+#define keyRight 77
+#define keyLeft 75
+#define keyN 110
+
+
+//notatki:
+//mechanika przejedzenia do zrobienia (maksymalnie 9 na wszystkich kaczkach)
+
+
+
+
+
+
+const int mx = 50;
+const int my = 100;
+static char board[my+2][mx+2];
+
+using namespace std;
+
+class cord {
+public:
+    int x, y;
+};
+
+class ccygnet 
+{
+
+public:
+    int id;
+    cord crd;
+    int ate;
+
+};
+
+ofstream troubleshoot;
+
+static cord SwanX, SwanY;
+static bool existY = true;
+static vector <ccygnet> cygnets;
+static int atemeter = 0;
+bool ate = false;
+int ncyg;
+int nest = false;
+int power = 0;
+int ndive = 1;
+//i had no idea such word exists
+
+vector <cord> bread;
+void print()
+{
+    if (SwanX.y > 10 && SwanX.y < 90)
+    {
+        for (int i = 0 + SwanX.y - 10; i < SwanX.y + 10; i++)
+        {
+
+            for (int j = 0; j < mx + 2; j++)
+                cout << board[i][j];
+            cout << "\n";
+        }
+    }
+    else if (SwanX.y >= 90)
+    {
+        for (int i = 80; i < my + 2; i++)
+        {
+
+            for (int j = 0; j < mx + 2; j++)
+                cout << board[i][j];
+            cout << "\n";
+        }
+
+    }
+    else if (SwanX.y <= 10)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+
+            for (int j = 0; j < mx + 2; j++)
+                cout << board[i][j];
+            cout << "\n";
+        }
+
+    }
+}
+
+struct breadmap
+{
+public:
+    char map[my + 2][mx + 2];
+    char map2[my + 2][mx + 2];
+    
+
+    breadmap()
+    {
+        for (int i = 1; i < my + 1; i++)
+        {
+            map[i][0] = '#';
+            map[i][mx + 1] = '#';
+            map2[i][0] = '0';
+            map2[i][1] = '0';
+            map2[i][mx + 1] = '0';
+            map2[i][mx] = '0';
+            for (int j = 1; j < mx + 1; j++)
+            {
+                map[i][j] = '`';
+               
+            }
+
+
+         
+        }
+        for (int i = mx - 4; i < mx + 1; i++)
+        {
+            map[50][i] = 'g';
+            map[51][i] = 'g';
+            map2[52][i] = '0';
+            map2[49][i] = '0';
+            map2[50][i - 1] = '0';
+            map2[50][i + 1] = '0';
+            map2[51][i - 1] = '0';
+            map2[51][i + 1] = '0';
+        }
+        for (int i = 0; i < mx + 2; i++)
+        {
+            map[0][i] = '#';
+            map[my + 1][i] = '#';
+            map2[0][i] = '0';
+            map2[1][i] = '0';
+            map2[my + 1][i] = '0';
+            map2[my][i] = '0';
+        }
+        map[SwanX.y][SwanX.x] = 'Y';
+        {
+            map2[SwanX.y][SwanX.x] = '0';
+            map2[SwanX.y - 1][SwanX.x] = '0';
+            map2[SwanX.y + 1][SwanX.x] = '0';
+            map2[SwanX.y][SwanX.x - 1] = '0';
+            map2[SwanX.y][SwanX.x + 1] = '0';
+        }
+        map[SwanY.y][SwanY.x] = 'X';
+        {
+            map2[SwanY.y][SwanY.x] = '0';
+            map2[SwanY.y - 1][SwanY.x] = '0';
+            map2[SwanY.y + 1][SwanY.x] = '0';
+            map2[SwanY.y][SwanY.x - 1] = '0';
+            map2[SwanY.y][SwanY.x + 1] = '0';
+        }
+        for (auto el : cygnets)
+        {
+            map[el.crd.y][el.crd.x] = el.ate + '0';
+            map2[el.crd.y - 1][el.crd.x] = '0';
+            map2[el.crd.y + 1][el.crd.x] = '0';
+            map2[el.crd.y][el.crd.x - 1] = '0';
+            map2[el.crd.y][el.crd.x + 1] = '0';
+            
+        }
+
+
+        
+
+    }
+    void breadspawn(int n)
+    {
+        srand(time(0));
+        while (bread.size() < n)
+        {
+            int a, b;
+            a = rand() % 50 + 1;
+            b = rand() % 100 + 1;
+            if (map2[b][a] != '0')
+            {
+                cord bread1;
+                bread1.y = b; bread1.x = a;
+                map2[b][a] = '0';
+                map2[b - 1][a] = '0';
+                map2[b + 1][a] = '0';
+                map2[b][a - 1] = '0';
+                map2[b][a + 1] = '0';
+                bread.push_back(bread1);
+            }
+
+        }
+
+
+    }
+
+
+
+};
+
+void refresh()
+{
+    for (int i = 1; i < my + 1; i++)
+    {
+        board[i][0] = '#';
+        board[i][mx + 1] = '#';
+        for (int j = 1; j < mx + 1; j++)
+            board[i][j] = '`';
+    }
+    for (int i = mx - 4; i < mx + 1; i++)
+    {
+        board[50][i] = 'g';
+        board[51][i] = 'g';
+    }
+    for (int i = 0; i < mx + 2; i++)
+    {
+        board[0][i] = '#';
+        board[my + 1][i] = '#';
+    }
+    for (auto el : bread)
+    {
+        
+        board[el.y][el.x] = 'o';
+    }
+    
+}
+void overwrite()
+{
+    refresh();
+    if(existY)
+    board[SwanX.y][SwanX.x] = 'X';
+    
+  
+    for (auto el : cygnets)
+    {
+        board[el.crd.y][el.crd.x] = /*char(el.ate + 48)*/ /*el.id */ +'0' + el.ate;
+
+    }
+    board[SwanY.y][SwanY.x] = 'Y';
+}
+void special(int n, int k)
+{
+    switch (k)
+    {
+    case 1:
+    {
+        SwanX.x += n;
+        break;
+    }
+    case 2:
+    {
+        SwanX.x -= n;
+        break;
+    }
+    case 3:
+    {
+        SwanX.y += n;
+        break;
+    }
+    case 4:
+    {
+        SwanX.y -= n;
+        break;
+    }
+    power--;
+    }
+}
+bool gameover()
+{
+    bool r =false, l =false, u = false, d = false;
+    if (board[SwanX.y - 1][SwanX.x] != '`' && board[SwanX.y - 1][SwanX.x] != 'o')
+    {
+        if (!nest || board[SwanX.y - 1][SwanX.x] == 'g')
+            u = true;
+    }
+    if (board[SwanX.y + 1][SwanX.x] != '`' && board[SwanX.y + 1][SwanX.x] != 'o')
+    {
+        if (!nest || board[SwanX.y + 1][SwanX.x] == 'g')
+            d = true;
+    }
+    if (board[SwanX.y][SwanX.x - 1] != '`' && board[SwanX.y][SwanX.x - 1] != 'o')
+    {
+        if (!nest || board[SwanX.y][SwanX.x - 1] == 'g')
+            l = true;
+    }
+    if (board[SwanX.y][SwanX.x + 1] != '`' && board[SwanX.y][SwanX.x + 1] != 'o')
+    {
+        if (!nest || board[SwanX.y][SwanX.x + 1] == 'g')
+            r = true;
+    }
+    if (l && r && u && d && power < 1)
+        return true;
+    else return false;
+}
+void inicialization()
+{
+    /*cout << "Welcome to the Swan Lake! \n" << endl;
+    Sleep(2000);
+    cout << "Use arrows to move! \n" << endl;
+    Sleep(2000);
+    cout << "Point of the game is to feed every cygnet at least 2 bread crumbs (\"o\")" << endl;
+    cout << "and go back to the nest! (\"g\")" << endl;
+    Sleep(5000);
+    cout << "You can use \"n\" to dive!" << endl;
+        Sleep(2000);*/
+
+
+
+    refresh();
+    cout << "How many cygnets do you want to have?" << endl;
+    cin >> ncyg;
+    power = ncyg / 6 + 1;
+    SwanX.y = ncyg + 2;
+    SwanX.x = 1;
+  
+  
+ 
+    
+    for (int i = 0; i < ncyg; i++)
+    {
+        ccygnet cygnet;
+        cygnet.id = i + 1;
+        cygnet.crd.y = SwanX.y - 1 - i;
+        cygnet.crd.x = SwanX.x;
+        cygnet.ate = 0;
+        board[cygnet.crd.y][cygnet.crd.x] = cygnet.ate + '0';
+        cygnets.push_back(cygnet);
+        
+    }
+    SwanY.y = SwanX.y - ncyg - 1;
+    SwanY.x = SwanX.x;
+
+
+    board[SwanX.y][SwanX.x] = 'Y';
+
+    board[SwanY.y][SwanY.x] = 'X';
+
+    breadmap mp;
+    mp.breadspawn(ncyg);
+    for (auto el : bread)
+    {
+
+        board[el.y][el.x] = 'o';
+    }
+
+}
+void theEnd()
+{
+
+    
+        existY = false;
+        system("cls");
+        refresh();
+
+        vector<ccygnet>buff;
+
+        ccygnet temp = cygnets[0];
+        temp.crd = SwanX;
+        temp.ate = cygnets[0].ate;
+        buff.push_back(temp);
+        for (int i = 0; i < cygnets.size() - 1; i++)
+        {
+            ccygnet temp2;
+            temp2 = cygnets[i];
+            //temp2.id = cygnets[i + 1].id;
+           temp2.ate = cygnets[i + 1].ate;
+            buff.push_back(temp2);
+            troubleshoot << "pętla " << i << endl;
+        }
+        SwanY = cygnets[cygnets.size() - 1].crd;
+        cygnets = buff;
+
+        overwrite();
+        print();
+        Sleep(500);
+        
+        int ctr = cygnets.size();
+        for (int i = 0; i < ctr; i++)
+        {
+            system("cls");
+           
+            cout << "GAME OVER" << endl;
+            vector<ccygnet>buff1;
+            for (int j = 0; j < cygnets.size() - 1; j++)
+            {   
+                ccygnet temp2;
+                temp2 = cygnets[j];
+                
+                temp2.id = cygnets[j + 1].id;
+               
+                temp2.ate = cygnets[j + 1].ate;
+               
+                buff1.push_back(temp2);
+               
+            }
+
+
+            SwanY = cygnets[cygnets.size() - 1].crd;
+
+            cygnets = buff1;
+
+
+            overwrite();
+            print();
+            Sleep(500);
+
+
+        }
+        refresh();
+        print();
+        Sleep(1000);
+        system("cls");
+        for (int i = 0; i < 1000; i++)
+            cout << "YOU WIN !!!" << endl;
+        exit(0);
+
+
+
+}
+
+void input(int n)
+{
+    if (power > 0 && n == 1)
+        cout << "Press \"n\" to dive!" << endl;
+    else if (power > 0 && n == 1)
+        cout << "No more dives!" << endl;
+    int key;
+    if (n > 1)
+    {
+        cout << "How far do you want to dive? (type: 0 to cancel)" << endl;
+        cin >> n;
+        if (n == 0)
+        {
+            system("cls");
+            print();
+            input(1);
+        }
+
+        
+        cout << "Which direction?" << endl;
+    }
+    key = _getch();
+    if(key == 0 || key == 224)
+    {
+        key = _getch();
+    }
+   
+
+    switch (key)
+    {
+    case keyUp:
+    {
+        if (SwanX.y - n > 0)
+        {
+
+            if (board[SwanX.y - n][SwanX.x] == 'g' && nest == true)
+            {
+                theEnd();
+            }
+            if (board[SwanX.y - n][SwanX.x] == '`' || board[SwanX.y - n][SwanX.x] == 'o')
+            {
+                vector<ccygnet>buff;
+                if (n > 1)
+                    power--;
+                ccygnet temp = cygnets[0];
+                temp.crd = SwanX;
+                temp.ate = cygnets[0].ate;
+                buff.push_back(temp);
+                for (int i = 0; i < cygnets.size() - 1; i++)
+                {
+                    ccygnet temp2;
+                    temp2 = cygnets[i];
+                    temp2.id = cygnets[i + 1].id;
+                    temp2.ate = cygnets[i + 1].ate;
+                    buff.push_back(temp2);
+                }
+                cout << SwanX.y << " Swanx y przed" << endl;
+                SwanX.y -= n;
+                cout << SwanX.y << " Swanx y po" << endl;
+
+                SwanY = cygnets[cygnets.size() - 1].crd;
+                cygnets = buff;
+
+                if (board[SwanX.y][SwanX.x] == 'o' && !ate)
+                {
+
+                    
+                    for (int i = 0; i < bread.size(); i++)
+                    {
+                        if (bread[i].x == SwanX.x && bread[i].y == SwanX.y)
+                        {
+
+                            bread.erase(bread.begin() + i);
+                            break;
+                        }
+                    }
+
+                    if (cygnets[cygnets.size() - 1].ate < atemeter + 1)
+                        for (int a = 0; a < cygnets.size(); a++)
+                        {
+                            if (cygnets[a].ate < atemeter + 1)
+                            {
+                                cygnets[a].ate++;
+                               
+                                break;
+                            }
+                        }
+                    else
+                    {
+                        atemeter++;
+                        cygnets[0].ate++;
+                    }
+
+
+                }
+                else if (ate && board[SwanX.y][SwanX.x] == 'o')
+                {
+                    cout << "The cygnets are full!" << endl;
+                    Sleep(1000);
+                }
+
+
+            }
+            else
+            {
+                cout << "You can't go here!" << endl;
+                Sleep(200);
+            }
+            breadmap mp;
+            mp.breadspawn(ncyg);
+            overwrite();
+            break;
+
+        }
+        else if (n > 1)
+        {
+            cout << "You can't dive that far!" << endl;
+            input(n);
+        }
+        else
+        {
+            cout << "You can't go here!" << endl;
+            Sleep(200);
+        }
+        break;
+    }
+    case keyLeft:
+    {
+        if (SwanX.x - n > 0)
+        {
+            if (board[SwanX.y][SwanX.x - n] == 'g' && nest == true)
+            {
+                theEnd();
+            }
+            if (board[SwanX.y][SwanX.x - n] == '`' || board[SwanX.y][SwanX.x - n] == 'o')
+            {
+                vector<ccygnet>buff;
+                if (n > 1)
+                    power--;
+                ccygnet temp = cygnets[0];
+                temp.crd = SwanX;
+                temp.ate = cygnets[0].ate;
+                buff.push_back(temp);
+                for (int i = 0; i < cygnets.size() - 1; i++)
+                {
+                    ccygnet temp2;
+                    temp2 = cygnets[i];
+                    temp2.ate = cygnets[i + 1].ate;
+                    temp2.id = cygnets[i + 1].id;
+                    buff.push_back(temp2);
+                }
+
+                SwanX.x -= n;
+
+                SwanY = cygnets[cygnets.size() - 1].crd;
+                cygnets = buff;
+
+                if(board[SwanX.y][SwanX.x] == 'o' && !ate)
+                {
+
+                   
+                    for (int i = 0; i < bread.size(); i++)
+                    {
+                        if (bread[i].x == SwanX.x && bread[i].y == SwanX.y)
+                        {
+
+                            bread.erase(bread.begin() + i);
+                            break;
+                        }
+                    }
+
+                    if (cygnets[cygnets.size() - 1].ate < atemeter + 1)
+                        for (int a = 0; a < cygnets.size(); a++)
+                        {
+                            if (cygnets[a].ate < atemeter + 1)
+                            {
+                                cygnets[a].ate++;
+                               
+                                break;
+                            }
+                        }
+                    else
+                    {
+                        atemeter++;
+                        cygnets[0].ate++;
+                    }
+
+
+                }
+                else if (ate && board[SwanX.y][SwanX.x] == 'o')
+                {
+                    cout << "The cygnets are full!" << endl;
+                    Sleep(1000);
+                }
+
+
+            }
+            else
+            {
+                cout << "You can't go here!" << endl;
+                Sleep(200);
+            }
+
+            breadmap mp;
+            mp.breadspawn(ncyg);
+            overwrite();
+            break;
+        }
+        else if (n > 1)
+        {
+            cout << "You can't dive that far!" << endl;
+            input(n);
+        }
+        else
+        {
+            cout << "You can't go here!" << endl;
+            Sleep(200);
+        }
+        break;
+    }
+
+
+    case keyRight:
+    {
+        if (SwanX.x + n < mx - 1)
+        {
+
+            if (board[SwanX.y][SwanX.x + n] == 'g' && nest == true)
+            {
+                theEnd();
+            }
+            if (board[SwanX.y][SwanX.x + n] == '`' || board[SwanX.y][SwanX.x + n] == 'o')
+            {
+
+                vector<ccygnet>buff;
+                if (n > 1)
+                    power--;
+                ccygnet temp = cygnets[0];
+                temp.crd = SwanX;
+                temp.ate = cygnets[0].ate;
+                buff.push_back(temp);
+                for (int i = 0; i < cygnets.size() - 1; i++)
+                {
+                    ccygnet temp2;
+                    temp2 = cygnets[i];
+                    temp2.id = cygnets[i + 1].id;
+                    temp2.ate = cygnets[i + 1].ate;
+                    buff.push_back(temp2);
+                }
+
+                SwanX.x += n;
+
+                SwanY = cygnets[cygnets.size() - 1].crd;
+               
+                cygnets = buff;
+
+                if (board[SwanX.y][SwanX.x] == 'o' && !ate)
+                {
+
+                    
+                    for (int i = 0; i < bread.size(); i++)
+                    {
+                        if (bread[i].x == SwanX.x && bread[i].y == SwanX.y)
+                        {
+
+                            bread.erase(bread.begin() + i);
+                            break;
+                        }
+                    }
+
+                    if (cygnets[cygnets.size() - 1].ate < atemeter + 1)
+                        for (int a = 0; a < cygnets.size(); a++)
+                        {
+                            if (cygnets[a].ate < atemeter + 1)
+                            {
+                                cygnets[a].ate++;
+                               
+                                break;
+                            }
+                        }
+                    else
+                    {
+                        atemeter++;
+                        cygnets[0].ate++;
+                    }
+
+
+                }
+                else if (ate && board[SwanX.y][SwanX.x] == 'o')
+                {
+                    cout << "The cygnets are full!" << endl;
+                    Sleep(1000);
+                }
+
+
+            }
+            else
+            {
+                cout << "You can't go here!" << endl;
+                Sleep(200);
+            }
+            
+            breadmap mp;
+            mp.breadspawn(ncyg);
+            overwrite();
+            break;
+        }
+        else if (n > 1)
+        {
+            cout << "You can't dive that far!" << endl;
+            input(n);
+        }
+        else
+        {
+            cout << "You can't go here!" << endl;
+            Sleep(200);
+        }
+        break;
+    }
+    case keyDown:
+    {
+        if (SwanX.x + n < my - 1)
+        {
+            if (board[SwanX.y + n][SwanX.x] == 'g' && nest == true)
+            {
+                theEnd();
+            }
+
+            if (board[SwanX.y + n][SwanX.x] == '`' || board[SwanX.y + n][SwanX.x] == 'o')
+            {
+
+                vector<ccygnet>buff;
+                if (n > 1)
+                    power--;
+                ccygnet temp = cygnets[0];
+                temp.crd = SwanX;
+                temp.ate = cygnets[0].ate;
+                buff.push_back(temp);
+                for (int i = 0; i < cygnets.size() - 1; i++)
+                {
+                    ccygnet temp2;
+                    temp2 = cygnets[i];
+                    temp2.id = cygnets[i + 1].id;
+                    temp2.ate = cygnets[i + 1].ate;
+                    buff.push_back(temp2);
+                }
+
+                SwanX.y += n;
+
+                SwanY = cygnets[cygnets.size() - 1].crd;
+                cygnets = buff;
+
+                if (board[SwanX.y][SwanX.x] == 'o' && !ate)
+                {
+
+                 
+                    for (int i = 0; i < bread.size(); i++)
+                    {
+                        if (bread[i].x == SwanX.x && bread[i].y == SwanX.y)
+                        {
+
+                            bread.erase(bread.begin() + i);
+                            break;
+                        }
+                    }
+
+                    if (cygnets[cygnets.size() - 1].ate < atemeter + 1)
+                        for (int a = 0; a < cygnets.size(); a++)
+                        {
+                            if (cygnets[a].ate < atemeter + 1)
+                            {
+                                cygnets[a].ate++;
+                               
+                                break;
+                            }
+                        }
+                    else
+                    {
+                        atemeter++;
+                        cygnets[0].ate++;
+                    }
+
+
+                }
+                else if (ate && board[SwanX.y][SwanX.x] == 'o')
+                {
+                    cout << "The cygnets are full!" << endl;
+                    Sleep(1000);
+                }
+
+
+            }
+            else
+            {
+                cout << "You can't go here!" << endl;
+                Sleep(200);
+            }
+   
+            breadmap mp;
+            mp.breadspawn(ncyg);
+            overwrite();
+            break;
+        }
+        else if (n > 1)
+        {
+            cout << "You can't dive that far!" << endl;
+            input(n);
+        }
+        else
+        {
+            cout << "You can't go here!" << endl;
+            Sleep(200);
+        }
+        break;
+    }
+    case keyN:
+    {   if (power > 0)
+    {
+        
+       
+        input(2);
+       
+        
+    }
+    }
+    }
+}
+
+
+int main()
+{
+  
+
+    inicialization();
+   
+    
+    bool win = false;
+   
+    while (!win)
+    {
+        if (gameover())
+        {
+            system("cls");
+            cout << "no more valid moves" << endl;
+            cout << "GAME OVER" << endl;
+            exit(0);
+        }
+        system("cls");
+        cout << "Dives avalible: " << power << endl;
+        if (nest)
+            cout << "GO BACK TO THE NEST" << endl;
+        
+        print();
+        if (cygnets[cygnets.size() - 1].ate >= 2)
+            nest = true;
+        input(1);
+       
+        cout << "\n";
+        if (cygnets[cygnets.size() - 1].ate == 9)
+            ate = true;
+    }
+
+
+
+
+
+
+
+
+  
+
+
+
+}
